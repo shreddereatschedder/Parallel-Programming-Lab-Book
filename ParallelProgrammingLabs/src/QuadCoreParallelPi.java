@@ -4,13 +4,29 @@ public class QuadCoreParallelPi extends Thread {
 
         long startTime = System.currentTimeMillis();
 
+//        QuadCoreParallelPi thread1 = new QuadCoreParallelPi();
+//        thread1.begin = 0 ;
+//        thread1.end = numSteps / 2 ;
+//
+//        QuadCoreParallelPi thread2 = new QuadCoreParallelPi();
+//        thread2.begin = numSteps / 2 ;
+//        thread2.end = numSteps ;
+//
+//        QuadCoreParallelPi thread3 = new QuadCoreParallelPi();
+//        thread3.begin = numSteps / 2;
+//        thread3.end = 3 * numSteps / 4;
+//
+//        QuadCoreParallelPi thread4 = new QuadCoreParallelPi();
+//        thread4.begin = 3 * numSteps / 4;
+//        thread4.end = numSteps;
+
         QuadCoreParallelPi thread1 = new QuadCoreParallelPi();
-        thread1.begin = 0 ;
-        thread1.end = numSteps / 2 ;
+        thread1.begin = 0;
+        thread1.end = numSteps / 4;
 
         QuadCoreParallelPi thread2 = new QuadCoreParallelPi();
-        thread2.begin = numSteps / 2 ;
-        thread2.end = numSteps ;
+        thread2.begin = numSteps / 4;
+        thread2.end = numSteps / 2;
 
         QuadCoreParallelPi thread3 = new QuadCoreParallelPi();
         thread3.begin = numSteps / 2;
