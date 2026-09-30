@@ -1,3 +1,5 @@
+package Lab2_Mandelbrot;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -12,8 +14,19 @@ public class DualThreadMandelbrot_j_loop extends Thread {
     final static int CUTOFF = 100;
 
     static int[][] set = new int[N][N];
+    static int[][] threadUsed = new int[N][N];
+
 
     public void run() {
+
+        int threadID;
+
+        if (begin == 0) {
+            threadID = 1;
+        }
+        else {
+            threadID = 2;
+        }
 
         // main calculation loop
         for (int i = 0; i < N; i++) {
@@ -37,6 +50,7 @@ public class DualThreadMandelbrot_j_loop extends Thread {
                 }
 
                 set[i][j] = k;
+                threadUsed[i][j] = threadID;
             }
         }
     }
@@ -81,12 +95,22 @@ public class DualThreadMandelbrot_j_loop extends Thread {
                 } else {
                     level = 0;
                 }
-                Color c = new Color(level / 2, level / 2, level);  // Blueish
+
+                Color c;
+
+                if (threadUsed[i][j] == 1) {
+                    // Thread 1 = red
+                    c = new Color(level, level / 2, level);
+                } else {
+                    // Thread 2 = blue
+                    c = new Color(level / 2, level / 2, level);
+                }
+
                 img.setRGB(i, j, c.getRGB());
             }
         }
 
         // Print file
-        ImageIO.write(img, "PNG", new File("Dual_Thread_Mandelbrot.png"));
+        ImageIO.write(img, "PNG", new File("src/Lab2_Mandelbrot/Dual_Thread_Mandelbrot_j_loop.png"));
     }
 }

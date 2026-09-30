@@ -1,3 +1,5 @@
+package Lab1_ThreadReprise;
+
 /**
  * Calculates an approximation of pi in parallel, using the rectangle
  * rule for numerical integration, and times how long the calculation takes.

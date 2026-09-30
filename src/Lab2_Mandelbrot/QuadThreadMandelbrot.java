@@ -1,9 +1,11 @@
+package Lab2_Mandelbrot;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
-public class DualThreadMandelbrot extends Thread {
+public class QuadThreadMandelbrot extends Thread {
 
     int begin;
     int end;
@@ -50,20 +52,33 @@ public class DualThreadMandelbrot extends Thread {
         BufferedImage img = new BufferedImage(N, N, BufferedImage.TYPE_INT_ARGB);
 
         // Create Threads
-        DualThreadMandelbrot thread1 = new DualThreadMandelbrot();
+        QuadThreadMandelbrot thread1 = new QuadThreadMandelbrot();
         thread1.begin = 0;
-        thread1.end = N / 2;
+        thread1.end = N / 4;
 
 
-        DualThreadMandelbrot thread2 = new DualThreadMandelbrot();
-        thread2.begin = N / 2;
-        thread2.end = N;
+        QuadThreadMandelbrot thread2 = new QuadThreadMandelbrot();
+        thread2.begin = N / 4;
+        thread2.end = N / 2;
+
+        QuadThreadMandelbrot thread3 = new QuadThreadMandelbrot();
+        thread3.begin = N/2;
+        thread3.end = N * 3/ 4;
+
+
+        QuadThreadMandelbrot thread4 = new QuadThreadMandelbrot();
+        thread4.begin = N * 3 / 4;
+        thread4.end = N;
 
         thread1.start();
         thread2.start();
+        thread3.start();
+        thread4.start();
 
         thread1.join();
         thread2.join();
+        thread3.start();
+        thread4.start();
 
         long endTime = System.currentTimeMillis();
 
@@ -81,12 +96,19 @@ public class DualThreadMandelbrot extends Thread {
                 } else {
                     level = 0;
                 }
-                Color c = new Color(level / 2, level / 2, level);  // Blueish
+                Color c;
+
+                if (i < N / 2) {
+                    c = new Color(level, level/2, level);
+                } else {
+                    c = new Color(level/2, level/2, level);
+                }
+
                 img.setRGB(i, j, c.getRGB());
             }
         }
 
         // Print file
-        ImageIO.write(img, "PNG", new File("Dual_Thread_Mandelbrot.png"));
+        ImageIO.write(img, "PNG", new File("Quad_Thread_Mandelbrot_coloured.png"));
     }
 }
