@@ -7,19 +7,33 @@ import java.io.File;
 
 public class QuadThreadMandelbrot extends Thread {
 
-    int begin;
-    int end;
-
+    int i_begin;
+    int i_end;
+    int j_begin;
+    int j_end;
     final static int N = 4096;
     final static int CUTOFF = 100;
 
     static int[][] set = new int[N][N];
+    static int[][] threadUsed = new int[N][N];
 
     public void run() {
 
+        int threadID;
+
+        if (i_begin == 0 && j_begin == 0) {
+            threadID = 1;
+        } else if (i_begin == 0 && j_begin == N/2) {
+            threadID = 2;
+        } else if (i_begin == N/2 && j_begin == 0) {
+            threadID = 3;
+        } else {
+            threadID = 4;
+        }
+
         // main calculation loop
-        for (int i = begin; i < end; i++) {
-            for (int j = 0; j < N; j++) {
+        for (int i = i_begin; i < i_end; i++) {
+            for (int j = j_begin; j < j_end; j++) {
 
                 double cr = (4.0 * i - 2 * N) / N;
                 double ci = (4.0 * j - 2 * N) / N;
@@ -39,6 +53,7 @@ public class QuadThreadMandelbrot extends Thread {
                 }
 
                 set[i][j] = k;
+                threadUsed[i][j] = threadID;
             }
         }
     }
@@ -53,22 +68,29 @@ public class QuadThreadMandelbrot extends Thread {
 
         // Create Threads
         QuadThreadMandelbrot thread1 = new QuadThreadMandelbrot();
-        thread1.begin = 0;
-        thread1.end = N / 4;
-
+        thread1.i_begin = 0;
+        thread1.i_end   = N/2;
+        thread1.j_begin = 0;
+        thread1.j_end   = N/2;
 
         QuadThreadMandelbrot thread2 = new QuadThreadMandelbrot();
-        thread2.begin = N / 4;
-        thread2.end = N / 2;
+        thread2.i_begin = 0;
+        thread2.i_end   = N/2;
+        thread2.j_begin = N/2;
+        thread2.j_end   = N;
 
         QuadThreadMandelbrot thread3 = new QuadThreadMandelbrot();
-        thread3.begin = N/2;
-        thread3.end = N * 3/ 4;
+        thread3.i_begin = N/2;
+        thread3.i_end   = N;
+        thread3.j_begin = 0;
+        thread3.j_end   = N/2;
 
 
         QuadThreadMandelbrot thread4 = new QuadThreadMandelbrot();
-        thread4.begin = N * 3 / 4;
-        thread4.end = N;
+        thread4.i_begin = N/2;
+        thread4.i_end   = N;
+        thread4.j_begin = N/2;
+        thread4.j_end   = N;
 
         thread1.start();
         thread2.start();
@@ -77,8 +99,8 @@ public class QuadThreadMandelbrot extends Thread {
 
         thread1.join();
         thread2.join();
-        thread3.start();
-        thread4.start();
+        thread3.join();
+        thread4.join();
 
         long endTime = System.currentTimeMillis();
 
@@ -96,12 +118,17 @@ public class QuadThreadMandelbrot extends Thread {
                 } else {
                     level = 0;
                 }
+
                 Color c;
 
-                if (i < N / 2) {
-                    c = new Color(level, level/2, level);
-                } else {
+                if (threadUsed[i][j] == 1) {
                     c = new Color(level/2, level/2, level);
+                } else if (threadUsed[i][j] == 2) {
+                    c = new Color(level/2, level, level);
+                } else if (threadUsed[i][j] == 3) {
+                    c = new Color(level, level/2, level/2);
+                } else {
+                    c = new Color(level, level/2, level);
                 }
 
                 img.setRGB(i, j, c.getRGB());
@@ -109,6 +136,6 @@ public class QuadThreadMandelbrot extends Thread {
         }
 
         // Print file
-        ImageIO.write(img, "PNG", new File("Quad_Thread_Mandelbrot_coloured.png"));
+        ImageIO.write(img, "PNG", new File("src/Lab2_Mandelbrot/Quad_Thread_Mandelbrot.png"));
     }
 }
