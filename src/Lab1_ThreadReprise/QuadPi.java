@@ -1,9 +1,11 @@
+package Lab1_ThreadReprise;
+
 /**
  * Calculates an approximation of pi in parallel using four threads,
  * each summing a quarter of the range of rectangles, and times how
- * long the calculation takes using nanosecond precision.
+ * long the calculation takes.
  */
-public class QuadPiNanoTime extends Thread {
+public class QuadPi extends Thread {
 
     static int numSteps = 10000000; // number of rectangles to sum
     static double step = 1.0 / (double) numSteps; // width of each rectangle
@@ -13,15 +15,15 @@ public class QuadPiNanoTime extends Thread {
 
     public static void main(String[] args) throws Exception {
 
-        long startTime = System.nanoTime(); // start timer
+        long startTime = System.currentTimeMillis(); // start timer
 
         int numThreads = 4;
-        QuadPiNanoTime[] threads = new QuadPiNanoTime[numThreads];
+        QuadPi[] threads = new QuadPi[numThreads];
         int chunk = numSteps / numThreads; // size of each quarter
 
         // create and start each thread with its own quarter of the range
         for (int t = 0; t < numThreads; t++) {
-            threads[t] = new QuadPiNanoTime();
+            threads[t] = new QuadPi();
             threads[t].begin = t * chunk;
             threads[t].end = (t == numThreads - 1) ? numSteps : (t + 1) * chunk; // last thread takes any remainder
             threads[t].start();
@@ -34,12 +36,12 @@ public class QuadPiNanoTime extends Thread {
             totalSum += threads[t].sum;
         }
 
-        long endTime = System.nanoTime(); // stop timer
+        long endTime = System.currentTimeMillis(); // stop timer
 
         double pi = step * totalSum;
 
         System.out.println("Value of pi: " + pi);
-        System.out.println("Calculated in " + (endTime - startTime) + " nanoseconds");
+        System.out.println("Calculated in " + (endTime - startTime) + " milliseconds");
     }
 
     public void run() {
