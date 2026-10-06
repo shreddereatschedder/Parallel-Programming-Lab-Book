@@ -1,11 +1,11 @@
-import java.awt.Color ;
+  import java.awt.Color ;
   import java.awt.image.BufferedImage ;
   
   import javax.imageio.ImageIO;
   
   import java.io.File ;
   
-  public class ParallelMandelbrot extends Thread {
+  public class Quarter_Split extends Thread {
   
       final static int N = 4096 ;
       final static int CUTOFF = 100 ; 
@@ -17,15 +17,19 @@ import java.awt.Color ;
           // Calculate set
   
           long startTime = System.currentTimeMillis();
-  
-          ParallelMandelbrot thread0 = new ParallelMandelbrot(0) ;
-          ParallelMandelbrot thread1 = new ParallelMandelbrot(1) ;
-  
-          thread0.start() ;
-          thread1.start() ;
-  
-          thread0.join() ;
-          thread1.join() ;
+
+          int numThreads = 4;
+          Quarter_Split [] threads = new Quarter_Split [numThreads] ;
+
+          for (int t = 0; t < numThreads; t++) {
+              threads [t] = new Quarter_Split(t, numThreads);
+              threads [t].start();
+          }
+
+          for (int t = 0; t < numThreads; t++) {
+              threads [t].join();
+          }
+          
   
           long endTime = System.currentTimeMillis();
   
@@ -63,14 +67,46 @@ import java.awt.Color ;
       }
   
       int me ;
+      int numThreads ;
   
-      public ParallelMandelbrot(int me) {
+      public Quarter_Split(int me, int numThreads) {
           this.me = me ;
+          this.numThreads = numThreads ;
       }
   
       public void run() {
-  
-        //   [... You fill in this code! ...]
+                int ibegin = (me / 2) * (N / 2);
+                int iend   = ibegin + N / 2;
+                int jbegin = (me % 2) * (N / 2);
+                int jend   = jbegin + N / 2;
+
+        
+        for(int i = ibegin ; i < iend ; i++) {
+              for(int j = jbegin ; j <jend ; j++) {
+
+                  double cr = (4.0 * i - 2 * N) / N ;
+                  double ci = (4.0 * j - 2 * N) / N ;
+
+                  double zr = cr, zi = ci ;
+
+                  int k = 0 ;
+                  while (k < CUTOFF && zr * zr + zi * zi < 4.0) {
+
+                      // z = c + z * z
+
+                      double newr = cr + zr * zr - zi * zi ;
+                      double newi = ci + 2 * zr * zi ;
+
+                      zr = newr ;
+                      zi = newi ;
+
+                      k++ ;
+                  }
+
+                  set [i] [j] = k ;
+              }
+          }
+          
       }
   
   }
