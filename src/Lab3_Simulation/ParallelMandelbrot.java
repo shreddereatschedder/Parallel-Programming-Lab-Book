@@ -91,14 +91,16 @@ public class ParallelMandelbrot extends Thread {
         int begin = me * b ;
         int end = begin + b ;
 
-        if (me == 0) {
-            begin = 0 ;
-            end = N/2 ;
-        }
-        else {  // me == 1
-            begin = N/2 ;
-            end = N ;
-        }
+
+
+//        if (me == 0) {
+//            begin = 0 ;
+//            end = N/2 ;
+//        }
+//        else {  // me == 1
+//            begin = N/2 ;
+//            end = N ;
+//        }
 
         for(int i = begin ; i < end ; i++) {
             for(int j = 0 ; j < N ; j++) {
@@ -126,5 +128,4 @@ public class ParallelMandelbrot extends Thread {
             }
         }
     }
-
 }
