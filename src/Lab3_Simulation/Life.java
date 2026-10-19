@@ -29,11 +29,11 @@ public class Life {
         pause() ;
 
         // Main update loop.
-
+        long startTime = System.currentTimeMillis();
         int iter = 0 ;
-        while(true) {
+        while(iter < 1000) {
 
-            System.out.println("iter = " + iter++) ;
+            //System.out.println("iter = " + iter++) ;
 
             // Calculate neighbour sums.
 
@@ -67,7 +67,10 @@ public class Life {
 
             display.repaint() ;
             pause() ;
+            iter++;
         }
+        long endTime = System.currentTimeMillis();
+        System.out.println("Calculation completed in " + (endTime - startTime) + " milliseconds");
     }
 
     static class Display extends JPanel {

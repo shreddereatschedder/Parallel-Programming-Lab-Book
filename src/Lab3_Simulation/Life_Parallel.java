@@ -7,7 +7,7 @@ import java.util.concurrent.CyclicBarrier;
 public class Life_Parallel extends Thread {
 
     final static int N = 1024 ;
-    final static int CELL_SIZE = 4 ;
+    final static int CELL_SIZE = 1 ;
     final static int DELAY = 0 ;
     final static int P = 2 ;
 
@@ -92,8 +92,9 @@ public class Life_Parallel extends Thread {
         int end = begin + blockSize;
 
         // Main update loop.
+        long startTime = System.currentTimeMillis();
         int iter = 0 ;
-        while (true) {
+        while (iter < 1000) {
 
             try {
 
@@ -141,6 +142,9 @@ public class Life_Parallel extends Thread {
                 e.printStackTrace();
                 return;
             }
+        iter++;
         }
+        long endTime = System.currentTimeMillis();
+        System.out.println("Parallel Calculation completed in " + (endTime - startTime) + " milliseconds");
     }
 }
