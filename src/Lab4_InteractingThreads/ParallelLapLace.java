@@ -66,50 +66,44 @@ public class ParallelLapLace extends Thread{
         int end = begin + B ;
 
 
-            for(int iter = 0 ; iter < NITER ; iter++) {
+        for(int iter = 0 ; iter < NITER ; iter++) {
 
-                // Calculate new phi
+            // Calculate new phi
 
-                for (int i = Math.max(1, begin); i < Math.min(N - 1, end); i++) {
-                    for (int j = 1; j < N - 1; j++) {
-                        newPhi[i][j] = 0.25F * (phi[i][j - 1] + phi[i][j + 1] + phi[i - 1][j] + phi[i + 1][j]);
-                    }
+            for (int i = Math.max(1, begin); i < Math.min(N - 1, end); i++) {
+                for (int j = 1; j < N - 1; j++) {
+                    newPhi[i][j] = 0.25F * (phi[i][j - 1] + phi[i][j + 1] + phi[i - 1][j] + phi[i + 1][j]);
                 }
-                try {
-                    barrier.await();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                } catch (BrokenBarrierException e) {
-                    throw new RuntimeException(e);
-                }
-                // Update all phi values
+            }
+            try {
+                barrier.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (BrokenBarrierException e) {
+                throw new RuntimeException(e);
+            }
+            // Update all phi values
 
-                for (int i = Math.max(1, begin); i < Math.min(N - 1, end); i++) {
-                    for (int j = 1; j < N - 1; j++) {
-                        phi[i][j] = newPhi[i][j];
-                    }
+            for (int i = Math.max(1, begin); i < Math.min(N - 1, end); i++) {
+                for (int j = 1; j < N - 1; j++) {
+                    phi[i][j] = newPhi[i][j];
                 }
-                try {
-                    barrier.await();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                } catch (BrokenBarrierException e) {
-                    throw new RuntimeException(e);
-                }
-
-
-                if(iter % OUTPUT_FREQ == 0) {
-                    System.out.println("iter = " + iter) ;
-                    display.repaint() ;
-                }
-
+            }
+            try {
+                barrier.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (BrokenBarrierException e) {
+                throw new RuntimeException(e);
             }
 
 
+            if(iter % OUTPUT_FREQ == 0) {
+                //System.out.println("iter = " + iter) ;
+                display.repaint() ;
+            }
 
-
-
-
+        }
     }
     final static int B = N / P ;  // block size
 
