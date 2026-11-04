@@ -52,15 +52,14 @@ public class SequentialLapLace {
             }
 
             if(iter % OUTPUT_FREQ == 0) {
-                System.out.println("iter = " + iter) ;
+                //System.out.println("iter = " + iter) ;
                 display.repaint() ;
             }
         }
 
         long endTime = System.currentTimeMillis();
 
-        System.out.println("Calculation completed in " +
-                (endTime - startTime) + " milliseconds");
+        System.out.println("Calculation completed in " + (endTime - startTime) + " milliseconds");
 
         display.repaint() ;
     }

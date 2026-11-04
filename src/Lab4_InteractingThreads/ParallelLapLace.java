@@ -12,7 +12,7 @@ public class ParallelLapLace extends Thread{
     final static int NITER = 100000 ;
     final static int OUTPUT_FREQ = 1 ;
 
-    final static int P = 2 ;
+    final static int P = 4 ;
 
     static float [][] phi = new float [N][N] ;
     static float [][] newPhi = new float [N][N] ;
@@ -77,9 +77,7 @@ public class ParallelLapLace extends Thread{
             }
             try {
                 barrier.await();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (BrokenBarrierException e) {
+            } catch (InterruptedException | BrokenBarrierException e) {
                 throw new RuntimeException(e);
             }
             // Update all phi values
@@ -91,15 +89,11 @@ public class ParallelLapLace extends Thread{
             }
             try {
                 barrier.await();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (BrokenBarrierException e) {
+            } catch (InterruptedException | BrokenBarrierException e) {
                 throw new RuntimeException(e);
             }
 
-
-            if(iter % OUTPUT_FREQ == 0) {
-                //System.out.println("iter = " + iter) ;
+            if(me == 0 && iter % 100 == 0) {
                 display.repaint() ;
             }
 
