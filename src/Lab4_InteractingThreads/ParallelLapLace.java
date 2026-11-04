@@ -12,7 +12,7 @@ public class ParallelLapLace extends Thread{
     final static int NITER = 100000 ;
     final static int OUTPUT_FREQ = 1 ;
 
-    final static int P = 4 ;
+    final static int P = 2 ;
 
     static float [][] phi = new float [N][N] ;
     static float [][] newPhi = new float [N][N] ;
