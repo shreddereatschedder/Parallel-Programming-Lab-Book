@@ -11,7 +11,7 @@ import java.util.stream.IntStream;
 public class Sequential_Knapsack {
     // Parameters
     static String filename       = "src/GeneticAlgorithmKnapsack/input_1000.txt";
-    static int    populationSize = 20;
+    static int    populationSize = 2000;
     static int    numGenerations = 100;
     static double mutationRate   = 0.6;
     static double crossoverRate  = 0.6;
@@ -100,13 +100,17 @@ public class Sequential_Knapsack {
     }
 
     static boolean[][] selection(List<boolean[]> population, int[] fitnessValues) {
-        List<Integer> idx = IntStream.range(0, population.size()).boxed().collect(Collectors.toList());
-        List<Integer> tournament = new ArrayList<>(idx.subList(0, tournamentSize));
+        int size = Math.min(tournamentSize, population.size());
+
+        Set<Integer> chosen = new HashSet<>();
+        while (chosen.size() < size) {
+            chosen.add(rng.nextInt(population.size()));   // a Set ignores repeats
+        }
+
+        List<Integer> tournament = new ArrayList<>(chosen);
         tournament.sort((a, b) -> Integer.compare(fitnessValues[b], fitnessValues[a]));
 
-        return new boolean[][] {
-                population.get(tournament.get(0)), population.get(tournament.get(1))
-        };
+        return new boolean[][] { population.get(tournament.get(0)), population.get(tournament.get(1)) };
     }
 
     static boolean[][] crossover(boolean[][] parents) {
@@ -199,7 +203,7 @@ public class Sequential_Knapsack {
         Files.writeString(Paths.get(path), sb.toString());
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException  {
         load_file();
 
         long startTime = System.currentTimeMillis();

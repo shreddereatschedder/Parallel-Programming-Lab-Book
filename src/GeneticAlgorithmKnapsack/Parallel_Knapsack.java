@@ -11,14 +11,14 @@ import java.util.concurrent.*;
 public class Parallel_Knapsack {
     // Parameters
     static String filename       = "src/GeneticAlgorithmKnapsack/input_1000.txt";
-    static int    populationSize = 20;
+    static int    populationSize = 2000;
     static int    numGenerations = 100;
     static double mutationRate   = 0.6;
     static double crossoverRate  = 0.6;
     static int    tournamentSize = 3;
     static int    eliteSize      = 2;
 
-    static int    P              = 2;
+    static int    P              = 12;
 
     // Problem data
     static int[] values;
@@ -62,25 +62,16 @@ public class Parallel_Knapsack {
         return w <= capacity ? v : 0;
     }
 
-    static int[] all_fitness(List<boolean[]> population) throws InterruptedException, ExecutionException {
-        int n = population.size();
-        int[] result = new int[n];
-        int chunk = (n + P - 1) / P;
-
-        List<Future<?>> futures = new ArrayList<>();
-        for (int start = 0; start < n; start += chunk) {
-            int from = start, to = Math.min(n, start + chunk);
-            futures.add(pool.submit(() -> {
-                for (int i = from; i < to; i++) {
-                    result[i] = fitness(population.get(i));
-                }
-            }));
+    static int[] all_fitness(List<boolean[]> population) { // get fitness from the whole population
+        int[] result = new int[population.size()];
+        for (int i = 0; i < population.size(); i++) {
+            result[i] = fitness(population.get(i));
         }
-        for (Future<?> f : futures) f.get();   // wait until every chunk is done
         return result;
     }
 
     static List<boolean[]> generate_population() {
+
         List<boolean[]> population = new ArrayList<>();
         Set<String> seen = new HashSet<>();
 
@@ -88,8 +79,8 @@ public class Parallel_Knapsack {
             boolean[] individual = new boolean[weights.length];
             for (int i = 0; i < individual.length; i++) individual[i] = rng.nextBoolean();
 
-            int w = weight_sum(individual);
-            while (w > capacity) {
+            int weight = weight_sum(individual);
+            while (weight > capacity) {
                 List<Integer> ones = new ArrayList<>();
                 for (int i = 0; i < individual.length; i++) {
                     if (individual[i]) {
@@ -99,7 +90,7 @@ public class Parallel_Knapsack {
 
                 int idx = ones.get(rng.nextInt(ones.size()));
                 individual[idx] = false;
-                w -= weights[idx];
+                weight -= weights[idx];
             }
 
             if (seen.add(Arrays.toString(individual))) population.add(individual);
@@ -108,15 +99,24 @@ public class Parallel_Knapsack {
     }
 
     static boolean[][] selection(List<boolean[]> population, int[] fitnessValues) {
-        List<Integer> idx = IntStream.range(0, population.size()).boxed().collect(Collectors.toList());
-        List<Integer> tournament = new ArrayList<>(idx.subList(0, tournamentSize));
+        Random rng = ThreadLocalRandom.current();
 
+        int size = Math.min(tournamentSize, population.size());
+
+        Set<Integer> chosen = new HashSet<>();
+        while (chosen.size() < size) {
+            chosen.add(rng.nextInt(population.size()));   // a Set ignores repeats
+        }
+
+        List<Integer> tournament = new ArrayList<>(chosen);
         tournament.sort((a, b) -> Integer.compare(fitnessValues[b], fitnessValues[a]));
 
         return new boolean[][] { population.get(tournament.get(0)), population.get(tournament.get(1)) };
     }
 
     static boolean[][] crossover(boolean[][] parents) {
+        Random rng = ThreadLocalRandom.current();
+
         boolean[] child1 = parents[0].clone();
         boolean[] child2 = parents[1].clone();
 
@@ -130,6 +130,8 @@ public class Parallel_Knapsack {
     }
 
     static void mutate(boolean[][] individuals) {
+        Random rng = ThreadLocalRandom.current();
+
         for (boolean[] individual : individuals) {
             int totalWeight = weight_sum(individual);
             for (int i = 0; i < individual.length; i++) {
@@ -157,8 +159,7 @@ public class Parallel_Knapsack {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    static List<boolean[]> next_generation(List<boolean[]> population, int[] fitnessValues)
-            throws InterruptedException, ExecutionException {
+    static List<boolean[]> next_generation(List<boolean[]> population, int[] fitnessValues) throws InterruptedException, ExecutionException {
 
         List<boolean[]> next = elitism(population, fitnessValues, Math.min(eliteSize, population.size()));
         int pairs = (population.size() - next.size() + 1) / 2;   // each pair gives 2 children
