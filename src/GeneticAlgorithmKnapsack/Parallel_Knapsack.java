@@ -6,30 +6,33 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
+import java.util.concurrent.*;
 
 public class Parallel_Knapsack {
     // Parameters
-    static String filename       = "src/GeneticAlgorithmKnapsack/debug_10.txt";
-    static int    populationSize = 10;
-    static int    numGenerations = 20;
-    static double mutationRate   = 0.3;
+    static String filename       = "src/GeneticAlgorithmKnapsack/input_1000.txt";
+    static int    populationSize = 20;
+    static int    numGenerations = 100;
+    static double mutationRate   = 0.6;
     static double crossoverRate  = 0.6;
     static int    tournamentSize = 3;
+    static int    eliteSize      = 2;
+
+    static int    P              = 2;
 
     // Problem data
     static int[] values;
     static int[] weights;
     static int capacity;
 
+    static ExecutorService pool;
+
     static final Random rng = new Random();
 
     // Setup
     static void load_file() throws IOException {
-        List<String> lines = Files.readAllLines(Paths.get(filename)).stream()
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList();
+        List<String> lines = Files.readAllLines(Paths.get(filename));
+
 
         String[] header = lines.getFirst().split("\\s+");
         capacity = Integer.parseInt(header[1]);   // header[0] is ignored
@@ -59,9 +62,22 @@ public class Parallel_Knapsack {
         return w <= capacity ? v : 0;
     }
 
-    static int[] all_fitness(List<boolean[]> population) {
-        IntStream s = IntStream.range(0, population.size());
-        return s.map(i -> fitness(population.get(i))).toArray(); // order preserved
+    static int[] all_fitness(List<boolean[]> population) throws InterruptedException, ExecutionException {
+        int n = population.size();
+        int[] result = new int[n];
+        int chunk = (n + P - 1) / P;
+
+        List<Future<?>> futures = new ArrayList<>();
+        for (int start = 0; start < n; start += chunk) {
+            int from = start, to = Math.min(n, start + chunk);
+            futures.add(pool.submit(() -> {
+                for (int i = from; i < to; i++) {
+                    result[i] = fitness(population.get(i));
+                }
+            }));
+        }
+        for (Future<?> f : futures) f.get();   // wait until every chunk is done
+        return result;
     }
 
     static List<boolean[]> generate_population() {
@@ -75,8 +91,12 @@ public class Parallel_Knapsack {
             int w = weight_sum(individual);
             while (w > capacity) {
                 List<Integer> ones = new ArrayList<>();
-                for (int i = 0; i < individual.length; i++) if (individual[i]) ones.add(i);
-                if (ones.isEmpty()) break;
+                for (int i = 0; i < individual.length; i++) {
+                    if (individual[i]) {
+                        ones.add(i);
+                    }
+                }
+
                 int idx = ones.get(rng.nextInt(ones.size()));
                 individual[idx] = false;
                 w -= weights[idx];
@@ -90,7 +110,9 @@ public class Parallel_Knapsack {
     static boolean[][] selection(List<boolean[]> population, int[] fitnessValues) {
         List<Integer> idx = IntStream.range(0, population.size()).boxed().collect(Collectors.toList());
         List<Integer> tournament = new ArrayList<>(idx.subList(0, tournamentSize));
+
         tournament.sort((a, b) -> Integer.compare(fitnessValues[b], fitnessValues[a]));
+
         return new boolean[][] { population.get(tournament.get(0)), population.get(tournament.get(1)) };
     }
 
@@ -135,69 +157,89 @@ public class Parallel_Knapsack {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    static List<boolean[]> next_generation(List<boolean[]> population, int[] fitnessValues, int eliteSize) {
-        List<boolean[]> next = elitism(population, fitnessValues, Math.min(eliteSize, population.size()));
+    static List<boolean[]> next_generation(List<boolean[]> population, int[] fitnessValues)
+            throws InterruptedException, ExecutionException {
 
-        while (next.size() < population.size()) {
-            boolean[][] parents  = selection(population, fitnessValues);
-            boolean[][] children = crossover(parents);
-            mutate(children);
-            next.add(children[0]);
-            next.add(children[1]);
+        List<boolean[]> next = elitism(population, fitnessValues, Math.min(eliteSize, population.size()));
+        int pairs = (population.size() - next.size() + 1) / 2;   // each pair gives 2 children
+
+        // One task per pair: select parents, cross them over, mutate the children
+        List<Callable<boolean[][]>> tasks = new ArrayList<>();
+        for (int k = 0; k < pairs; k++) {
+            tasks.add(() -> {
+                boolean[][] children = crossover(selection(population, fitnessValues));
+                mutate(children);
+                return children;
+            });
         }
+
+        // invokeAll runs them on the pool and waits until every task is done
+        for (Future<boolean[][]> f : pool.invokeAll(tasks)) {
+            next.addAll(Arrays.asList(f.get()));
+        }
+
         return new ArrayList<>(next.subList(0, population.size()));
     }
+
 
     // Main loop
     record Result(boolean[] bestSolution, List<Integer> fitnessOverTime) {}
 
-    static Result solve_knapsack() {
+    static Result solve_knapsack() throws InterruptedException, ExecutionException {
         List<boolean[]> population = generate_population();
-        int[] fitnessValues = all_fitness(population);
 
-        List<Integer> fitnessOverTime = new ArrayList<>();
-        boolean[] bestSolution = null;
+        pool = Executors.newFixedThreadPool(P);
+        try {
+            int[] fitnessValues = all_fitness(population);
 
-        for (int gen = 0; gen < numGenerations; gen++) {
-            population = next_generation(population, fitnessValues, 2);
-            fitnessValues = all_fitness(population); // evaluated once per generation
+            List<Integer> fitnessOverTime = new ArrayList<>();
+            boolean[] bestSolution = null;
 
-            int bestIdx = 0;
-            for (int i = 1; i < fitnessValues.length; i++)
-                if (fitnessValues[i] > fitnessValues[bestIdx]) bestIdx = i;
+            for (int gen = 0; gen < numGenerations; gen++) {
+                population = next_generation(population, fitnessValues);
+                fitnessValues = all_fitness(population); // evaluated once per generation
 
-            bestSolution = population.get(bestIdx);
-            fitnessOverTime.add(fitnessValues[bestIdx]);
+                int bestIdx = 0;
+                for (int i = 1; i < fitnessValues.length; i++)
+                    if (fitnessValues[i] > fitnessValues[bestIdx]) bestIdx = i;
+
+                bestSolution = population.get(bestIdx);
+                fitnessOverTime.add(fitnessValues[bestIdx]);
+            }
+            return new Result(bestSolution, fitnessOverTime);
+        } finally {
+            pool.shutdown();   // without this the program never exits
         }
-        return new Result(bestSolution, fitnessOverTime);
     }
 
     static void save_fitness_csv(List<Integer> fitnessOverTime, String path) throws IOException {
         StringBuilder sb = new StringBuilder("generation,fitness\n");
+
         for (int g = 0; g < fitnessOverTime.size(); g++)
             sb.append(g).append(',').append(fitnessOverTime.get(g)).append('\n');
+
         Files.writeString(Paths.get(path), sb.toString());
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
         load_file();
+
+        long startTime = System.currentTimeMillis();
 
         Result result = solve_knapsack();
         boolean[] best = result.bestSolution();
         int bestValue  = fitness(best);
         int bestWeight = weight_sum(best);
 
-        System.out.println("Total Value of Current Attempt: " + bestValue);
-
-        int[] bits = new int[best.length];
-        for (int i = 0; i < best.length; i++) bits[i] = best[i] ? 1 : 0;
-
-        System.out.println("Best Solution: " + Arrays.toString(bits));
         System.out.println("Total Value: " + bestValue);
         System.out.println("Total Weight: " + bestWeight + " / " + capacity);
 
-        save_fitness_csv(result.fitnessOverTime(), "src/GeneticAlgorithmKnapsack/fitness_over_time.csv");
-        System.out.println("Fitness curve written to fitness_over_time.csv");
+//        String baseName = Paths.get(filename).getFileName().toString();
+//        baseName = baseName.substring(0, baseName.lastIndexOf('.'));
+//        save_fitness_csv(result.fitnessOverTime(), "src/GeneticAlgorithmKnapsack/parallel_fitness_over_time_" + baseName + ".csv");
+//        System.out.println("Fitness curve written to parallel_fitness_over_time_" + baseName + ".csv");
 
+        long endTime = System.currentTimeMillis();
+        System.out.println("Parallel GA completed in " + (endTime - startTime) + " milliseconds");
     }
 }

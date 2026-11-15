@@ -8,14 +8,15 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 
-public class KnapsackGA {
+public class Sequential_Knapsack {
     // Parameters
-    static String filename       = "src/GeneticAlgorithmKnapsack/debug_10.txt";
-    static int    populationSize = 10;
-    static int    numGenerations = 20;
-    static double mutationRate   = 0.3;
+    static String filename       = "src/GeneticAlgorithmKnapsack/input_1000.txt";
+    static int    populationSize = 20;
+    static int    numGenerations = 100;
+    static double mutationRate   = 0.6;
     static double crossoverRate  = 0.6;
     static int    tournamentSize = 3;
+    static int    eliteSize      = 2;
 
     // Problem data
     static int[] values;
@@ -24,19 +25,16 @@ public class KnapsackGA {
 
     static final Random rng = new Random();
 
-    // Setup
+    // Load Dataset from txt file
     static void load_file() throws IOException {
-        List<String> lines = Files.readAllLines(Paths.get(filename)).stream()
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList();
+        List<String> lines = Files.readAllLines(Paths.get(filename));
 
-        String[] header = lines.getFirst().split("\\s+");
+        String[] header = lines.getFirst().split("\\s+"); // splits dataset based on whitespace
         capacity = Integer.parseInt(header[1]);   // header[0] is ignored
 
         List<String> items = lines.subList(1, lines.size());
-        values  = new int[items.size()];
-        weights = new int[items.size()];
+        values  = new int[items.size()]; // store values in one array
+        weights = new int[items.size()]; // store weights in another array
         for (int i = 0; i < items.size(); i++) {
             String[] parts = items.get(i).split("\\s+");
             values[i]  = Integer.parseInt(parts[0]);
@@ -44,24 +42,34 @@ public class KnapsackGA {
         }
     }
 
-    // GA components
-    static int weight_sum(boolean[] individual) {
-        int w = 0;
-        for (int i = 0; i < individual.length; i++) if (individual[i]) w += weights[i];
-        return w;
-    }
-
-    static int fitness(boolean[] individual) {
-        int w = 0, v = 0;
+    static int weight_sum(boolean[] individual) { // sum the weights of individuals
+        int weight = 0;
         for (int i = 0; i < individual.length; i++) {
-            if (individual[i]) { w += weights[i]; v += values[i]; }
+            if (individual[i]) {
+                weight += weights[i];
+            }
         }
-        return w <= capacity ? v : 0;
+        return weight;
     }
 
-    static int[] all_fitness(List<boolean[]> population) {
-        IntStream s = IntStream.range(0, population.size());
-        return s.map(i -> fitness(population.get(i))).toArray(); // order preserved
+    static int fitness(boolean[] individual) { // get individual fitness
+        int weight = 0, value = 0;
+        for (int i = 0; i < individual.length; i++) {
+            if (individual[i]) { weight += weights[i]; value += values[i]; }
+        }
+        if (weight <= capacity) {
+            return value;
+        } else {
+            return 0;
+        }
+    }
+
+    static int[] all_fitness(List<boolean[]> population) { // get fitness from the whole population
+        int[] result = new int[population.size()];
+        for (int i = 0; i < population.size(); i++) {
+            result[i] = fitness(population.get(i));
+        }
+        return result;
     }
 
     static List<boolean[]> generate_population() {
@@ -72,16 +80,20 @@ public class KnapsackGA {
             boolean[] individual = new boolean[weights.length];
             for (int i = 0; i < individual.length; i++) individual[i] = rng.nextBoolean();
 
-            int w = weight_sum(individual);
-            while (w > capacity) {
+            int weight = weight_sum(individual);
+            while (weight > capacity) {
                 List<Integer> ones = new ArrayList<>();
-                for (int i = 0; i < individual.length; i++) if (individual[i]) ones.add(i);
-                if (ones.isEmpty()) break;
+
+                for (int i = 0; i < individual.length; i++) {
+                    if (individual[i]) {
+                        ones.add(i);
+                    }
+                }
+
                 int idx = ones.get(rng.nextInt(ones.size()));
                 individual[idx] = false;
-                w -= weights[idx];
+                weight -= weights[idx];
             }
-
             if (seen.add(Arrays.toString(individual))) population.add(individual);
         }
         return population;
@@ -91,7 +103,10 @@ public class KnapsackGA {
         List<Integer> idx = IntStream.range(0, population.size()).boxed().collect(Collectors.toList());
         List<Integer> tournament = new ArrayList<>(idx.subList(0, tournamentSize));
         tournament.sort((a, b) -> Integer.compare(fitnessValues[b], fitnessValues[a]));
-        return new boolean[][] { population.get(tournament.get(0)), population.get(tournament.get(1)) };
+
+        return new boolean[][] {
+                population.get(tournament.get(0)), population.get(tournament.get(1))
+        };
     }
 
     static boolean[][] crossover(boolean[][] parents) {
@@ -135,13 +150,15 @@ public class KnapsackGA {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    static List<boolean[]> next_generation(List<boolean[]> population, int[] fitnessValues, int eliteSize) {
+    static List<boolean[]> next_generation(List<boolean[]> population, int[] fitnessValues) {
         List<boolean[]> next = elitism(population, fitnessValues, Math.min(eliteSize, population.size()));
 
         while (next.size() < population.size()) {
             boolean[][] parents  = selection(population, fitnessValues);
             boolean[][] children = crossover(parents);
+
             mutate(children);
+
             next.add(children[0]);
             next.add(children[1]);
         }
@@ -159,12 +176,13 @@ public class KnapsackGA {
         boolean[] bestSolution = null;
 
         for (int gen = 0; gen < numGenerations; gen++) {
-            population = next_generation(population, fitnessValues, 2);
+            population = next_generation(population, fitnessValues);
             fitnessValues = all_fitness(population); // evaluated once per generation
 
             int bestIdx = 0;
-            for (int i = 1; i < fitnessValues.length; i++)
+            for (int i = 1; i < fitnessValues.length; i++) {
                 if (fitnessValues[i] > fitnessValues[bestIdx]) bestIdx = i;
+            }
 
             bestSolution = population.get(bestIdx);
             fitnessOverTime.add(fitnessValues[bestIdx]);
@@ -174,30 +192,32 @@ public class KnapsackGA {
 
     static void save_fitness_csv(List<Integer> fitnessOverTime, String path) throws IOException {
         StringBuilder sb = new StringBuilder("generation,fitness\n");
+
         for (int g = 0; g < fitnessOverTime.size(); g++)
             sb.append(g).append(',').append(fitnessOverTime.get(g)).append('\n');
+
         Files.writeString(Paths.get(path), sb.toString());
     }
 
     public static void main(String[] args) throws IOException {
         load_file();
 
+        long startTime = System.currentTimeMillis();
+
         Result result = solve_knapsack();
         boolean[] best = result.bestSolution();
         int bestValue  = fitness(best);
         int bestWeight = weight_sum(best);
 
-        System.out.println("Total Value of Current Attempt: " + bestValue);
-
-        int[] bits = new int[best.length];
-        for (int i = 0; i < best.length; i++) bits[i] = best[i] ? 1 : 0;
-
-        System.out.println("Best Solution: " + Arrays.toString(bits));
         System.out.println("Total Value: " + bestValue);
         System.out.println("Total Weight: " + bestWeight + " / " + capacity);
 
-        save_fitness_csv(result.fitnessOverTime(), "src/GeneticAlgorithmKnapsack/fitness_over_time.csv");
-        System.out.println("Fitness curve written to fitness_over_time.csv");
+//        String baseName = Paths.get(filename).getFileName().toString();
+//        baseName = baseName.substring(0, baseName.lastIndexOf('.'));
+//        save_fitness_csv(result.fitnessOverTime(), "src/GeneticAlgorithmKnapsack/fitness_over_time_" + baseName + ".csv");
+//        System.out.println("Fitness written to fitness_over_time_" + baseName + ".csv");
 
+        long endTime = System.currentTimeMillis();
+        System.out.println("Sequential GA completed in " + (endTime - startTime) + " milliseconds");
     }
 }
