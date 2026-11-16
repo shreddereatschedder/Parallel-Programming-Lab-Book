@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Random;
 
 
-public class LoadFile {
+public class LoadFileAndParameters {
 
     // Parameters
     static String filename       = "src/GeneticAlgorithmKnapsack/input_1000.txt";

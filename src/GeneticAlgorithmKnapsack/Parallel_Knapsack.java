@@ -16,7 +16,7 @@ public class Parallel_Knapsack {
         int weight = 0;
         for (int i = 0; i < individual.length; i++) {
             if (individual[i]) {
-                weight += LoadFile.weights[i];
+                weight += LoadFileAndParameters.weights[i];
             }
         }
         return weight;
@@ -28,11 +28,11 @@ public class Parallel_Knapsack {
 
         for (int i = 0; i < individual.length; i++) {
             if (individual[i]) {
-                weight += LoadFile.weights[i]; value += LoadFile.values[i];
+                weight += LoadFileAndParameters.weights[i]; value += LoadFileAndParameters.values[i];
             }
         }
 
-        if (weight <= LoadFile.capacity) {
+        if (weight <= LoadFileAndParameters.capacity) {
             return value;
         } else {
             return 0;
@@ -53,12 +53,12 @@ public class Parallel_Knapsack {
         List<boolean[]> population = new ArrayList<>();
         Set<String> seen = new HashSet<>();
 
-        while (population.size() < LoadFile.populationSize) {
-            boolean[] individual = new boolean[LoadFile.weights.length];
-            for (int i = 0; i < individual.length; i++) individual[i] = LoadFile.random_number.nextBoolean();
+        while (population.size() < LoadFileAndParameters.populationSize) {
+            boolean[] individual = new boolean[LoadFileAndParameters.weights.length];
+            for (int i = 0; i < individual.length; i++) individual[i] = LoadFileAndParameters.random_number.nextBoolean();
 
             int weight = weight_sum(individual);
-            while (weight > LoadFile.capacity) {
+            while (weight > LoadFileAndParameters.capacity) {
                 List<Integer> ones = new ArrayList<>();
                 for (int i = 0; i < individual.length; i++) {
                     if (individual[i]) {
@@ -66,9 +66,9 @@ public class Parallel_Knapsack {
                     }
                 }
 
-                int index = ones.get(LoadFile.random_number.nextInt(ones.size()));
+                int index = ones.get(LoadFileAndParameters.random_number.nextInt(ones.size()));
                 individual[index] = false;
-                weight -= LoadFile.weights[index];
+                weight -= LoadFileAndParameters.weights[index];
             }
             if (seen.add(Arrays.toString(individual))) population.add(individual);
         }
@@ -78,7 +78,7 @@ public class Parallel_Knapsack {
     static boolean[][] selection(List<boolean[]> population, int[] fitnessValues) {
         Random random_number = ThreadLocalRandom.current();
 
-        int size = Math.min(LoadFile.tournamentSize, population.size());
+        int size = Math.min(LoadFileAndParameters.tournamentSize, population.size());
 
         Set<Integer> chosen_individuals = new HashSet<>();
         while (chosen_individuals.size() < size) {
@@ -97,7 +97,7 @@ public class Parallel_Knapsack {
         boolean[] child1 = parents[0].clone();
         boolean[] child2 = parents[1].clone();
 
-        if (random_number.nextDouble() < LoadFile.crossoverRate) {
+        if (random_number.nextDouble() < LoadFileAndParameters.crossoverRate) {
             int n = child1.length;
             int point = 1 + random_number.nextInt(n - 1);
             System.arraycopy(parents[1], point, child1, point, n - point);
@@ -118,16 +118,16 @@ public class Parallel_Knapsack {
         int totalWeight = weight_sum(individual);
 
         for (int i = 0; i < individual.length; i++) {
-            if (random_number.nextDouble() >= LoadFile.mutationRate) {
+            if (random_number.nextDouble() >= LoadFileAndParameters.mutationRate) {
                 continue; // no mutation: leave this gene alone
             }
 
             if (individual[i]) { // item is in the knapsack: take it out
                 individual[i] = false;
-                totalWeight -= LoadFile.weights[i];
-            } else if (totalWeight + LoadFile.weights[i] <= LoadFile.capacity) {   // item is out: add it only if it still fits
+                totalWeight -= LoadFileAndParameters.weights[i];
+            } else if (totalWeight + LoadFileAndParameters.weights[i] <= LoadFileAndParameters.capacity) {   // item is out: add it only if it still fits
                 individual[i] = true;
-                totalWeight += LoadFile.weights[i];
+                totalWeight += LoadFileAndParameters.weights[i];
             }
         }
     }
@@ -142,7 +142,7 @@ public class Parallel_Knapsack {
 
     static List<boolean[]> next_generation(List<boolean[]> population, int[] fitnessValues) throws InterruptedException, ExecutionException {
 
-        List<boolean[]> next = elitism(population, fitnessValues, Math.min(LoadFile.eliteSize, population.size()));
+        List<boolean[]> next = elitism(population, fitnessValues, Math.min(LoadFileAndParameters.eliteSize, population.size()));
         int pairs = (population.size() - next.size() + 1) / 2;   // each pair gives 2 children
 
         // One task per pair: select parents, cross them over, mutate the children
@@ -170,14 +170,14 @@ public class Parallel_Knapsack {
     static Result solve_knapsack() throws InterruptedException, ExecutionException {
         List<boolean[]> population = generate_population();
 
-        pool = Executors.newFixedThreadPool(LoadFile.P);
+        pool = Executors.newFixedThreadPool(LoadFileAndParameters.P);
         try {
             int[] fitnessValues = all_fitness(population);
 
             List<Integer> fitnessOverTime = new ArrayList<>();
             boolean[] bestSolution = null;
 
-            for (int gen = 0; gen < LoadFile.numGenerations; gen++) {
+            for (int gen = 0; gen < LoadFileAndParameters.numGenerations; gen++) {
                 population = next_generation(population, fitnessValues);
                 fitnessValues = all_fitness(population); // evaluated once per generation
 
@@ -204,7 +204,7 @@ public class Parallel_Knapsack {
     }
 
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
-        LoadFile.load_file();
+        LoadFileAndParameters.load_file();
 
         long startTime = System.currentTimeMillis();
 
@@ -214,7 +214,7 @@ public class Parallel_Knapsack {
         int bestWeight = weight_sum(best);
 
         System.out.println("Total Value: " + bestValue);
-        System.out.println("Total Weight: " + bestWeight + " / " + LoadFile.capacity);
+        System.out.println("Total Weight: " + bestWeight + " / " + LoadFileAndParameters.capacity);
 
 //        String baseName = Paths.get(filename).getFileName().toString();
 //        baseName = baseName.substring(0, baseName.lastIndexOf('.'));
