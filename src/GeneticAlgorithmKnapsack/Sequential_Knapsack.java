@@ -9,25 +9,6 @@ import java.util.stream.IntStream;
 
 
 public class Sequential_Knapsack {
-
-    // Load Dataset from txt file
-    static void load_file() throws IOException {
-        List<String> lines = Files.readAllLines(Paths.get(LoadFileAndParameters.filename));
-
-        String[] header = lines.getFirst().split("\\s+"); // splits dataset based on whitespace
-        LoadFileAndParameters.capacity = Integer.parseInt(header[1]);
-
-        List<String> items = lines.subList(1, lines.size());
-        LoadFileAndParameters.values  = new int[items.size()]; // store values in one array
-        LoadFileAndParameters.weights = new int[items.size()]; // store weights in another array
-
-        for (int i = 0; i < items.size(); i++) {
-            String[] parts = items.get(i).split("\\s+");
-            LoadFileAndParameters.values[i]  = Integer.parseInt(parts[0]);
-            LoadFileAndParameters.weights[i] = Integer.parseInt(parts[1]);
-        }
-    }
-
     static int weight_sum(boolean[] individual) { // sum the weights of individuals
         int weight = 0;
         for (int i = 0; i < individual.length; i++) {
@@ -203,7 +184,7 @@ public class Sequential_Knapsack {
         Files.writeString(Paths.get(path), sb.toString());
     }
 
-    public static void main(String[] args) throws IOException  {
+    public static void main() throws IOException  {
         LoadFileAndParameters.load_file();
 
         long startTime = System.currentTimeMillis();

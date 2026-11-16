@@ -203,7 +203,7 @@ public class Parallel_Knapsack {
         Files.writeString(Paths.get(path), sb.toString());
     }
 
-    public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
+    public static void main() throws IOException, ExecutionException, InterruptedException {
         LoadFileAndParameters.load_file();
 
         long startTime = System.currentTimeMillis();
