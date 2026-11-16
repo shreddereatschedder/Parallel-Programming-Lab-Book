@@ -10,36 +10,36 @@ import java.util.stream.IntStream;
 
 public class Sequential_Knapsack {
     // Parameters
-    static String filename       = "src/GeneticAlgorithmKnapsack/input_1000.txt";
-    static int    populationSize = 2000;
-    static int    numGenerations = 100;
-    static double mutationRate   = 0.6;
-    static double crossoverRate  = 0.6;
-    static int    tournamentSize = 3;
-    static int    eliteSize      = 2;
-
-    // Problem data
-    static int[] values;
-    static int[] weights;
-    static int capacity;
-
+//    static String filename       = "src/GeneticAlgorithmKnapsack/input_1000.txt";
+//    static int    populationSize = 2000;
+//    static int    numGenerations = 100;
+//    static double mutationRate   = 0.6;
+//    static double crossoverRate  = 0.6;
+//    static int    tournamentSize = 3;
+//    static int    eliteSize      = 2;
+//
+//    // Problem data
+//    static int[] values;
+//    static int[] weights;
+//    static int capacity;
+//
     static final Random random_number = new Random();
 
     // Load Dataset from txt file
     static void load_file() throws IOException {
-        List<String> lines = Files.readAllLines(Paths.get(filename));
+        List<String> lines = Files.readAllLines(Paths.get(LoadFile.filename));
 
         String[] header = lines.getFirst().split("\\s+"); // splits dataset based on whitespace
-        capacity = Integer.parseInt(header[1]);
+        LoadFile.capacity = Integer.parseInt(header[1]);
 
         List<String> items = lines.subList(1, lines.size());
-        values  = new int[items.size()]; // store values in one array
-        weights = new int[items.size()]; // store weights in another array
+        LoadFile.values  = new int[items.size()]; // store values in one array
+        LoadFile.weights = new int[items.size()]; // store weights in another array
 
         for (int i = 0; i < items.size(); i++) {
             String[] parts = items.get(i).split("\\s+");
-            values[i]  = Integer.parseInt(parts[0]);
-            weights[i] = Integer.parseInt(parts[1]);
+            LoadFile.values[i]  = Integer.parseInt(parts[0]);
+            LoadFile.weights[i] = Integer.parseInt(parts[1]);
         }
     }
 
@@ -47,7 +47,7 @@ public class Sequential_Knapsack {
         int weight = 0;
         for (int i = 0; i < individual.length; i++) {
             if (individual[i]) {
-                weight += weights[i];
+                weight += LoadFile.weights[i];
             }
         }
         return weight;
@@ -59,11 +59,11 @@ public class Sequential_Knapsack {
 
         for (int i = 0; i < individual.length; i++) {
             if (individual[i]) {
-                weight += weights[i]; value += values[i];
+                weight += LoadFile.weights[i]; value += LoadFile.values[i];
             }
         }
 
-        if (weight <= capacity) {
+        if (weight <= LoadFile.capacity) {
             return value;
         } else {
             return 0;
@@ -84,12 +84,12 @@ public class Sequential_Knapsack {
         List<boolean[]> population = new ArrayList<>();
         Set<String> seen = new HashSet<>();
 
-        while (population.size() < populationSize) {
-            boolean[] individual = new boolean[weights.length];
+        while (population.size() < LoadFile.populationSize) {
+            boolean[] individual = new boolean[LoadFile.weights.length];
             for (int i = 0; i < individual.length; i++) individual[i] = random_number.nextBoolean();
 
             int weight = weight_sum(individual);
-            while (weight > capacity) {
+            while (weight > LoadFile.capacity) {
                 List<Integer> items_in_knapsack = new ArrayList<>();
 
                 for (int i = 0; i < individual.length; i++) {
@@ -100,7 +100,7 @@ public class Sequential_Knapsack {
 
                 int index = items_in_knapsack.get(random_number.nextInt(items_in_knapsack.size()));
                 individual[index] = false;
-                weight -= weights[index];
+                weight -= LoadFile.weights[index];
             }
             if (seen.add(Arrays.toString(individual))) population.add(individual);
         }
@@ -108,7 +108,7 @@ public class Sequential_Knapsack {
     }
 
     static boolean[][] selection(List<boolean[]> population, int[] fitnessValues) {
-        int size = Math.min(tournamentSize, population.size());
+        int size = Math.min(LoadFile.tournamentSize, population.size());
 
         Set<Integer> chosen_individuals = new HashSet<>();
         while (chosen_individuals.size() < size) {
@@ -125,7 +125,7 @@ public class Sequential_Knapsack {
         boolean[] child1 = parents[0].clone();
         boolean[] child2 = parents[1].clone();
 
-        if (random_number.nextDouble() < crossoverRate) {
+        if (random_number.nextDouble() < LoadFile.crossoverRate) {
             int n = child1.length;
             int point = 1 + random_number.nextInt(n - 1);
             System.arraycopy(parents[1], point, child1, point, n - point);
@@ -146,16 +146,16 @@ public class Sequential_Knapsack {
         int totalWeight = weight_sum(individual);
 
         for (int i = 0; i < individual.length; i++) {
-            if (random_number.nextDouble() >= mutationRate) {
+            if (random_number.nextDouble() >= LoadFile.mutationRate) {
                 continue;                                   // no mutation: leave this gene alone
             }
 
             if (individual[i]) {                            // item is in the knapsack: take it out
                 individual[i] = false;
-                totalWeight -= weights[i];
-            } else if (totalWeight + weights[i] <= capacity) {   // item is out: add it only if it still fits
+                totalWeight -= LoadFile.weights[i];
+            } else if (totalWeight + LoadFile.weights[i] <= LoadFile.capacity) {   // item is out: add it only if it still fits
                 individual[i] = true;
-                totalWeight += weights[i];
+                totalWeight += LoadFile.weights[i];
             }
         }
     }
@@ -170,7 +170,7 @@ public class Sequential_Knapsack {
     }
 
     static List<boolean[]> next_generation(List<boolean[]> population, int[] fitnessValues) {
-        List<boolean[]> next = elitism(population, fitnessValues, Math.min(eliteSize, population.size()));
+        List<boolean[]> next = elitism(population, fitnessValues, Math.min(LoadFile.eliteSize, population.size()));
 
         while (next.size() < population.size()) {
             boolean[][] parents  = selection(population, fitnessValues);
@@ -194,7 +194,7 @@ public class Sequential_Knapsack {
         List<Integer> fitnessOverTime = new ArrayList<>();
         boolean[] bestSolution = null;
 
-        for (int generation = 0; generation < numGenerations; generation++) {
+        for (int generation = 0; generation < LoadFile.numGenerations; generation++) {
             population = next_generation(population, fitnessValues);
             fitnessValues = all_fitness(population); // evaluated once per generation
 
@@ -219,7 +219,7 @@ public class Sequential_Knapsack {
     }
 
     public static void main(String[] args) throws IOException  {
-        load_file();
+        LoadFile.load_file();
 
         long startTime = System.currentTimeMillis();
 
@@ -229,7 +229,7 @@ public class Sequential_Knapsack {
         int bestWeight = weight_sum(best);
 
         System.out.println("Total Value: " + bestValue);
-        System.out.println("Total Weight: " + bestWeight + " / " + capacity);
+        System.out.println("Total Weight: " + bestWeight + " / " + LoadFile.capacity);
 
 //        String baseName = Paths.get(filename).getFileName().toString();
 //        baseName = baseName.substring(0, baseName.lastIndexOf('.'));
