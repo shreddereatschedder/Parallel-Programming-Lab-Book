@@ -9,28 +9,8 @@ import java.util.stream.IntStream;
 import java.util.concurrent.*;
 
 public class Parallel_Knapsack {
-    // Parameters
-//    static String filename       = "src/GeneticAlgorithmKnapsack/input_1000.txt";
-//    static int    populationSize = 2000;
-//    static int    numGenerations = 100;
-//    static double mutationRate   = 0.6;
-//    static double crossoverRate  = 0.6;
-//    static int    tournamentSize = 3;
-//    static int    eliteSize      = 2;
-//
-//    static int    P              = 12;
-//
-//    // Problem data
-//    static int[] values;
-//    static int[] weights;
-//    static int capacity;
 
     static ExecutorService pool;
-
-    static final Random random_number = new Random();
-
-    // Setup
-
 
     static int weight_sum(boolean[] individual) { // sum the weights of individuals
         int weight = 0;
@@ -75,7 +55,7 @@ public class Parallel_Knapsack {
 
         while (population.size() < LoadFile.populationSize) {
             boolean[] individual = new boolean[LoadFile.weights.length];
-            for (int i = 0; i < individual.length; i++) individual[i] = random_number.nextBoolean();
+            for (int i = 0; i < individual.length; i++) individual[i] = LoadFile.random_number.nextBoolean();
 
             int weight = weight_sum(individual);
             while (weight > LoadFile.capacity) {
@@ -86,7 +66,7 @@ public class Parallel_Knapsack {
                     }
                 }
 
-                int index = ones.get(random_number.nextInt(ones.size()));
+                int index = ones.get(LoadFile.random_number.nextInt(ones.size()));
                 individual[index] = false;
                 weight -= LoadFile.weights[index];
             }

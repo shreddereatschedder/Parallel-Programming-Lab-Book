@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Random;
 
 
 public class LoadFile {
@@ -20,6 +21,8 @@ public class LoadFile {
     static int[] values;
     static int[] weights;
     static int capacity;
+
+    static final Random random_number = new Random();
 
     static int    P              = 12;
 

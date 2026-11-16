@@ -9,21 +9,6 @@ import java.util.stream.IntStream;
 
 
 public class Sequential_Knapsack {
-    // Parameters
-//    static String filename       = "src/GeneticAlgorithmKnapsack/input_1000.txt";
-//    static int    populationSize = 2000;
-//    static int    numGenerations = 100;
-//    static double mutationRate   = 0.6;
-//    static double crossoverRate  = 0.6;
-//    static int    tournamentSize = 3;
-//    static int    eliteSize      = 2;
-//
-//    // Problem data
-//    static int[] values;
-//    static int[] weights;
-//    static int capacity;
-//
-    static final Random random_number = new Random();
 
     // Load Dataset from txt file
     static void load_file() throws IOException {
@@ -86,7 +71,7 @@ public class Sequential_Knapsack {
 
         while (population.size() < LoadFile.populationSize) {
             boolean[] individual = new boolean[LoadFile.weights.length];
-            for (int i = 0; i < individual.length; i++) individual[i] = random_number.nextBoolean();
+            for (int i = 0; i < individual.length; i++) individual[i] = LoadFile.random_number.nextBoolean();
 
             int weight = weight_sum(individual);
             while (weight > LoadFile.capacity) {
@@ -98,7 +83,7 @@ public class Sequential_Knapsack {
                     }
                 }
 
-                int index = items_in_knapsack.get(random_number.nextInt(items_in_knapsack.size()));
+                int index = items_in_knapsack.get(LoadFile.random_number.nextInt(items_in_knapsack.size()));
                 individual[index] = false;
                 weight -= LoadFile.weights[index];
             }
@@ -112,7 +97,7 @@ public class Sequential_Knapsack {
 
         Set<Integer> chosen_individuals = new HashSet<>();
         while (chosen_individuals.size() < size) {
-            chosen_individuals.add(random_number.nextInt(population.size()));   // a Set ignores repeats
+            chosen_individuals.add(LoadFile.random_number.nextInt(population.size()));   // a Set ignores repeats
         }
 
         List<Integer> tournament = new ArrayList<>(chosen_individuals);
@@ -125,9 +110,9 @@ public class Sequential_Knapsack {
         boolean[] child1 = parents[0].clone();
         boolean[] child2 = parents[1].clone();
 
-        if (random_number.nextDouble() < LoadFile.crossoverRate) {
+        if (LoadFile.random_number.nextDouble() < LoadFile.crossoverRate) {
             int n = child1.length;
-            int point = 1 + random_number.nextInt(n - 1);
+            int point = 1 + LoadFile.random_number.nextInt(n - 1);
             System.arraycopy(parents[1], point, child1, point, n - point);
             System.arraycopy(parents[0], point, child2, point, n - point);
         }
@@ -146,7 +131,7 @@ public class Sequential_Knapsack {
         int totalWeight = weight_sum(individual);
 
         for (int i = 0; i < individual.length; i++) {
-            if (random_number.nextDouble() >= LoadFile.mutationRate) {
+            if (LoadFile.random_number.nextDouble() >= LoadFile.mutationRate) {
                 continue;                                   // no mutation: leave this gene alone
             }
 
