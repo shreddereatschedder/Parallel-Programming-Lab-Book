@@ -1,4 +1,4 @@
-package GeneticAlgorithmKnapsack;
+ package GeneticAlgorithmKnapsack;
 
 import java.io.IOException;
 import java.nio.file.Files;
