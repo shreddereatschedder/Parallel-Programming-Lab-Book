@@ -82,7 +82,7 @@ public class Parallel_Knapsack {
 
         Set<Integer> chosen_individuals = new HashSet<>();
         while (chosen_individuals.size() < size) {
-            chosen_individuals.add(random_number.nextInt(population.size()));   // a Set ignores repeats
+            chosen_individuals.add(random_number.nextInt(population.size()));
         }
 
         List<Integer> tournament = new ArrayList<>(chosen_individuals);
@@ -145,7 +145,6 @@ public class Parallel_Knapsack {
         List<boolean[]> next = elitism(population, fitnessValues, Math.min(LoadFileAndParameters.eliteSize, population.size()));
         int pairs = (population.size() - next.size() + 1) / 2;   // each pair gives 2 children
 
-        // One task per pair: select parents, cross them over, mutate the children
         List<Callable<boolean[][]>> tasks = new ArrayList<>();
         for (int k = 0; k < pairs; k++) {
             tasks.add(() -> {
@@ -155,7 +154,6 @@ public class Parallel_Knapsack {
             });
         }
 
-        // invokeAll runs them on the pool and waits until every task is done
         for (Future<boolean[][]> f : pool.invokeAll(tasks)) {
             next.addAll(Arrays.asList(f.get()));
         }
