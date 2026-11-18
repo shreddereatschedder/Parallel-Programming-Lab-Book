@@ -5,3 +5,6 @@
 /mavenHomeManager.xml
 
 out/
+
+# Local JDK installation
+/oracleJdk-27/

@@ -1,8 +1,8 @@
 package Lab3_Simulation;
 
-import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.CyclicBarrier;
+import javax.swing.*;
 
 public class Life_Parallel extends Thread {
 
@@ -14,7 +14,7 @@ public class Life_Parallel extends Thread {
     static int [][] state = new int [N][N] ;
     static int [][] sums  = new int [N][N] ;
 
-    static Display display = new Display() ;
+    // static Display display = new Display() ;
 
     static CyclicBarrier barrier = new CyclicBarrier(P);
 
@@ -40,7 +40,7 @@ public class Life_Parallel extends Thread {
             threads [me].start() ;
         }
 
-        display.repaint() ;
+        // display.repaint() ;
         pause() ;
     }
 
@@ -135,7 +135,7 @@ public class Life_Parallel extends Thread {
 
                 barrier.await();
 
-                display.repaint();
+                // display.repaint();
                 pause();
 
             } catch (Exception e) {
