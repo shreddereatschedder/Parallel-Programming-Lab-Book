@@ -24,7 +24,11 @@ public class LoadFileAndParameters {
 
     static final Random random_number = new Random();
 
-    static int    P              = 12;
+    static int P = 12;
+
+    static int islands = 2;
+    static int migration_interval = 10;   // generations between migrations
+    static int migrant_count      = 3;    // how many individuals an island sends each time
 
     static void load_file() throws IOException {
         List<String> lines = Files.readAllLines(Paths.get(filename));
