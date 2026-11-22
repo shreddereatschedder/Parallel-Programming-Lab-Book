@@ -1,14 +1,10 @@
 package GeneticAlgorithmKnapsack;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-
-public class Sequential_Knapsack_2 {
+public class CommonMethods {
     static int weight_sum(boolean[] individual) { // sum the weights of individuals
         int weight = 0;
         for (int i = 0; i < individual.length; i++) {
@@ -150,59 +146,5 @@ public class Sequential_Knapsack_2 {
         return new ArrayList<>(next.subList(0, population.size()));
     }
 
-    // Main loop
     record Result(boolean[] bestSolution, List<Integer> fitnessOverTime) {}
-
-    static Result solve_knapsack() {
-        List<boolean[]> population = generate_population();
-        int[] fitnessValues = all_fitness(population);
-
-        List<Integer> fitnessOverTime = new ArrayList<>();
-        boolean[] bestSolution = null;
-
-        for (int generation = 0; generation < LoadFileAndParameters.numGenerations; generation++) {
-            population = next_generation(population, fitnessValues);
-            fitnessValues = all_fitness(population); // evaluated once per generation
-
-            int bestIndex = 0;
-            for (int i = 1; i < fitnessValues.length; i++) {
-                if (fitnessValues[i] > fitnessValues[bestIndex]) bestIndex = i;
-            }
-
-            bestSolution = population.get(bestIndex);
-            fitnessOverTime.add(fitnessValues[bestIndex]);
-        }
-        return new Result(bestSolution, fitnessOverTime);
-    }
-
-    static void save_fitness_csv(List<Integer> fitnessOverTime, String path) throws IOException {
-        StringBuilder sb = new StringBuilder("generation,fitness\n");
-
-        for (int g = 0; g < fitnessOverTime.size(); g++)
-            sb.append(g).append(',').append(fitnessOverTime.get(g)).append('\n');
-
-        Files.writeString(Paths.get(path), sb.toString());
-    }
-
-    public static void main() throws IOException  {
-        LoadFileAndParameters.load_file();
-
-        long startTime = System.currentTimeMillis();
-
-        Result result = solve_knapsack();
-        boolean[] best = result.bestSolution();
-        int bestValue  = fitness(best);
-        int bestWeight = weight_sum(best);
-
-        System.out.println("Total Value: " + bestValue);
-        System.out.println("Total Weight: " + bestWeight + " / " + LoadFileAndParameters.capacity);
-
-//        String baseName = Paths.get(filename).getFileName().toString();
-//        baseName = baseName.substring(0, baseName.lastIndexOf('.'));
-//        save_fitness_csv(result.fitnessOverTime(), "src/GeneticAlgorithmKnapsack/fitness_over_time_" + baseName + ".csv");
-//        System.out.println("Fitness written to fitness_over_time_" + baseName + ".csv");
-
-        long endTime = System.currentTimeMillis();
-        System.out.println("Sequential GA completed in " + (endTime - startTime) + " milliseconds");
-    }
 }
