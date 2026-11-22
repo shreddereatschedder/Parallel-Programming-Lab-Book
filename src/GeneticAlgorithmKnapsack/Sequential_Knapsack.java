@@ -3,9 +3,8 @@ package GeneticAlgorithmKnapsack;
 import java.io.IOException;
 import java.util.*;
 
-
 import static GeneticAlgorithmKnapsack.CommonMethods.*;
-
+import static GeneticAlgorithmKnapsack.LoadFileAndParameters.*;
 
 public class Sequential_Knapsack {
 
@@ -16,7 +15,7 @@ public class Sequential_Knapsack {
         List<Integer> fitnessOverTime = new ArrayList<>();
         boolean[] bestSolution = null;
 
-        for (int generation = 0; generation < LoadFileAndParameters.numGenerations; generation++) {
+        for (int generation = 0; generation < numGenerations; generation++) {
             population = next_generation(population, fitnessValues);
             fitnessValues = all_fitness(population); // evaluated once per generation
 
@@ -32,7 +31,7 @@ public class Sequential_Knapsack {
     }
 
     public static void main() throws IOException  {
-        LoadFileAndParameters.load_file();
+        load_file();
 
         long startTime = System.currentTimeMillis();
 
@@ -44,7 +43,7 @@ public class Sequential_Knapsack {
         long endTime = System.currentTimeMillis();
 
         System.out.println("Total Value: " + bestValue);
-        System.out.println("Total Weight: " + bestWeight + " / " + LoadFileAndParameters.capacity);
+        System.out.println("Total Weight: " + bestWeight + " / " + capacity);
         System.out.println("Sequential GA completed in " + (endTime - startTime) + " milliseconds");
     }
 }
