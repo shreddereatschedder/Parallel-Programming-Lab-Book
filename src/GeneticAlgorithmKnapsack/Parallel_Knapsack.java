@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static GeneticAlgorithmKnapsack.CommonMethods.*;
+import static GeneticAlgorithmKnapsack.LoadFileAndParameters.*;
+
 
 public class Parallel_Knapsack {
 
@@ -13,17 +15,17 @@ public class Parallel_Knapsack {
     // Main loop
     record Result(boolean[] bestSolution, List<Integer> fitnessOverTime) {}
 
-    static Result solve_knapsack() throws InterruptedException, ExecutionException {
+    static Result solve_knapsack_threads() throws InterruptedException, ExecutionException {
         List<boolean[]> population = generate_population();
 
-        pool = Executors.newFixedThreadPool(LoadFileAndParameters.P);
+        pool = Executors.newFixedThreadPool(P);
         try {
             int[] fitnessValues = all_fitness(population);
 
             List<Integer> fitnessOverTime = new ArrayList<>();
             boolean[] bestSolution = null;
 
-            for (int gen = 0; gen < LoadFileAndParameters.numGenerations; gen++) {
+            for (int gen = 0; gen < numGenerations; gen++) {
                 population = next_generation(population, fitnessValues);
                 fitnessValues = all_fitness(population); // evaluated once per generation
 
@@ -36,16 +38,16 @@ public class Parallel_Knapsack {
             }
             return new Result(bestSolution, fitnessOverTime);
         } finally {
-            pool.shutdown();   // without this the program never exits
+            pool.shutdown();
         }
     }
 
     public static void main() throws IOException, ExecutionException, InterruptedException {
-        LoadFileAndParameters.load_file();
+        load_file();
 
         long startTime = System.currentTimeMillis();
 
-        Result result = solve_knapsack();
+        Result result = solve_knapsack_threads();
         boolean[] best = result.bestSolution();
         int bestValue  = fitness(best);
         int bestWeight = weight_sum(best);
@@ -53,7 +55,7 @@ public class Parallel_Knapsack {
         long endTime = System.currentTimeMillis();
 
         System.out.println("Total Value: " + bestValue);
-        System.out.println("Total Weight: " + bestWeight + " / " + LoadFileAndParameters.capacity);
+        System.out.println("Total Weight: " + bestWeight + " / " + capacity);
         System.out.println("Parallel GA completed in " + (endTime - startTime) + " milliseconds");
     }
 }
