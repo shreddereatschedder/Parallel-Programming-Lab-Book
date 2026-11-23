@@ -8,6 +8,9 @@ import static GeneticAlgorithmKnapsack.CommonMethods.*;
 import static GeneticAlgorithmKnapsack.LoadFileAndParameters.*;
 
 public class IslandKnapsack {
+
+    static ExecutorService pool;
+
     static final ThreadLocal<Integer> current_island = new ThreadLocal<>(); // Designates the island a thread belongs to
 
     static final List<ConcurrentLinkedQueue<boolean[]>> mailboxes = new ArrayList<>(); // mailboxes hold  the migrants waiting to be picked up by island i
@@ -25,10 +28,10 @@ public class IslandKnapsack {
                 .toList();
 
 
-        ConcurrentLinkedQueue<boolean[]> outbox = mailboxes.get((island + 1) % mailboxes.size()); // Send copies of best individuals to the next island
+        ConcurrentLinkedQueue<boolean[]> outbox = mailboxes.get((island + 1) % mailboxes.size()); // Send copies of the best individuals to the next island
         for (int k = 0; k < m; k++) outbox.add(population.get(order.get(k)).clone());
 
-        ConcurrentLinkedQueue<boolean[]> inbox = mailboxes.get(island); // Replace worst individuals with migrant individuals
+        ConcurrentLinkedQueue<boolean[]> inbox = mailboxes.get(island); // Replace the worst individuals with migrant individuals
         int replaced = 0;
         boolean[] genes;
         while (replaced < m && (genes = inbox.poll()) != null) {
@@ -45,7 +48,7 @@ public class IslandKnapsack {
         mailboxes.clear();
         for (int i = 0; i < islands; i++) mailboxes.add(new ConcurrentLinkedQueue<>());
 
-        ExecutorService pool = Executors.newFixedThreadPool(islands);
+        pool = Executors.newFixedThreadPool(islands);
         try {
             List<Future<Result>> futures = new ArrayList<>();
             for (int i = 0; i < islands; i++) {
