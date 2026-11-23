@@ -13,10 +13,10 @@ public class IslandKnapsack {
 
     static final ThreadLocal<Integer> current_island = new ThreadLocal<>(); // Designates the island a thread belongs to
 
-    static final List<ConcurrentLinkedQueue<boolean[]>> mailboxes = new ArrayList<>(); // mailboxes hold  the migrants waiting to be picked up by island i
+    static final List<ConcurrentLinkedQueue<boolean[]>> transit = new ArrayList<>(); // transit hold  the migrants waiting to be picked up by island i
 
     static void migrate(int island, List<boolean[]> population, int[] fitnessValues) { // Sends copies of the best individuals to the next island and takes in migrant individuals
-        if (mailboxes.size() < 2) { // edge case when an island has nobody to exchange with
+        if (transit.size() < 2) { // edge case when an island has nobody to exchange with
             return;
         }
 
@@ -28,10 +28,10 @@ public class IslandKnapsack {
                 .toList();
 
 
-        ConcurrentLinkedQueue<boolean[]> outbox = mailboxes.get((island + 1) % mailboxes.size()); // Send copies of the best individuals to the next island
+        ConcurrentLinkedQueue<boolean[]> outbox = transit.get((island + 1) % transit.size()); // Send copies of the best individuals to the next island
         for (int k = 0; k < m; k++) outbox.add(population.get(order.get(k)).clone());
 
-        ConcurrentLinkedQueue<boolean[]> inbox = mailboxes.get(island); // Replace the worst individuals with migrant individuals
+        ConcurrentLinkedQueue<boolean[]> inbox = transit.get(island); // Replace the worst individuals with migrant individuals
         int replaced = 0;
         boolean[] genes;
         while (replaced < m && (genes = inbox.poll()) != null) {
@@ -45,8 +45,8 @@ public class IslandKnapsack {
 
     // Run one island per thread and return the best result found
     static Result solve_islands(int islands) throws InterruptedException, ExecutionException {
-        mailboxes.clear();
-        for (int i = 0; i < islands; i++) mailboxes.add(new ConcurrentLinkedQueue<>());
+        transit.clear();
+        for (int i = 0; i < islands; i++) transit.add(new ConcurrentLinkedQueue<>());
 
         pool = Executors.newFixedThreadPool(islands);
         try {
