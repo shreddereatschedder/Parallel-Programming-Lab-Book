@@ -7,27 +7,62 @@ import java.util.concurrent.*;
 import static GeneticAlgorithmKnapsack.CommonMethods.*;
 import static GeneticAlgorithmKnapsack.LoadFileAndParameters.*;
 
-
 public class Parallel_Knapsack {
 
     static ExecutorService pool;
 
-    // Main loop
-    record Result(boolean[] bestSolution, List<Integer> fitnessOverTime) {}
+    static  List<boolean[]> next_generation_threads(List<boolean[]> population, int[] fitnessValues) throws InterruptedException, ExecutionException {
+        List<boolean[]> next = elitism(population, fitnessValues, Math.min(eliteSize, population.size()));
+        int pairs = (population.size() - next.size() + 1) / 2;   // each pair gives 2 children
 
-    static Result solve_knapsack_threads() throws InterruptedException, ExecutionException {
+        // One task per pair: select parents, cross them over, mutate the children
+        List<Callable<boolean[][]>> tasks = new ArrayList<>();
+        for (int k = 0; k < pairs; k++) {
+            tasks.add(() -> {
+                boolean[][] parents  = selection(population, fitnessValues);
+                boolean[][] children = crossover(parents);
+                mutate(children);
+                return children;
+            });
+        }
+
+        // invokeAll runs them on the pool and waits until every task is done
+        for (Future<boolean[][]> f : pool.invokeAll(tasks)) {
+            next.addAll(Arrays.asList(f.get()));
+        }
+        return new ArrayList<>(next.subList(0, population.size()));
+    }
+
+    static int[] all_fitness_threads(List<boolean[]> population) throws InterruptedException, ExecutionException {
+        int n = population.size();
+        int[] result = new int[n];
+        int chunk = (n + P - 1) / P;
+
+        List<Future<?>> futures = new ArrayList<>();
+        for (int start = 0; start < n; start += chunk) {
+            int from = start, to = Math.min(n, start + chunk);
+            futures.add(pool.submit(() -> {
+                for (int i = from; i < to; i++) result[i] = fitness(population.get(i));
+            }));
+        }
+        for (Future<?> f : futures) f.get();   // wait until every chunk is done
+        return result;
+    }
+
+    static Result solve_knapsack_threads() throws ExecutionException, InterruptedException {
         List<boolean[]> population = generate_population();
 
         pool = Executors.newFixedThreadPool(P);
+
         try {
-            int[] fitnessValues = all_fitness(population);
+            int[] fitnessValues = all_fitness_threads(population);
 
             List<Integer> fitnessOverTime = new ArrayList<>();
             boolean[] bestSolution = null;
 
             for (int gen = 0; gen < numGenerations; gen++) {
-                population = next_generation(population, fitnessValues);
-                fitnessValues = all_fitness(population); // evaluated once per generation
+                population = next_generation_threads(population, fitnessValues);
+                fitnessValues = all_fitness_threads(population); // evaluated once per generation
 
                 int bestIdx = 0;
                 for (int i = 1; i < fitnessValues.length; i++)
