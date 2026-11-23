@@ -8,30 +8,27 @@ import static GeneticAlgorithmKnapsack.CommonMethods.*;
 import static GeneticAlgorithmKnapsack.LoadFileAndParameters.*;
 
 public class IslandKnapsack {
+    static final ThreadLocal<Integer> current_island = new ThreadLocal<>(); // Designates the island a thread belongs to
 
-    // The island a thread belongs to. null in the normal sequential run, so the hook does nothing there.
-    static final ThreadLocal<Integer> current_island = new ThreadLocal<>();
+    static final List<ConcurrentLinkedQueue<boolean[]>> mailboxes = new ArrayList<>(); // mailboxes hold  the migrants waiting to be picked up by island i
 
-    // mailboxes.get(i) holds the migrants waiting to be picked up by island i
-    static final List<ConcurrentLinkedQueue<boolean[]>> mailboxes = new ArrayList<>();
+    static void migrate(int island, List<boolean[]> population, int[] fitnessValues) { // Sends copies of the best individuals to the next island and takes in migrant individuals
+        if (mailboxes.size() < 2) { // edge case when an island has nobody to exchange with
+            return;
+        }
 
-    // Sends copies of this island's best individuals to the next island and takes in what has arrived.
-    static void migrate(int island, List<boolean[]> population, int[] fitnessValues) {
-        if (mailboxes.size() < 2) return;                                     // a single island has nobody to exchange with
         int m = Math.min(migrant_count, population.size() / 2);
 
-        // Indices of the population the best fitness first
-        List<Integer> order = IntStream.range(0, population.size())
+        List<Integer> order = IntStream.range(0, population.size()) // Indices of the population's best fitness first
                 .boxed()
                 .sorted((a, b) -> Integer.compare(fitnessValues[b], fitnessValues[a]))
                 .toList();
 
-        // Send copies of my best m individuals to the next island in the ring
-        ConcurrentLinkedQueue<boolean[]> outbox = mailboxes.get((island + 1) % mailboxes.size());
+
+        ConcurrentLinkedQueue<boolean[]> outbox = mailboxes.get((island + 1) % mailboxes.size()); // Send copies of best individuals to the next island
         for (int k = 0; k < m; k++) outbox.add(population.get(order.get(k)).clone());
 
-        // Replace my worst individuals with whatever the previous island has sent me
-        ConcurrentLinkedQueue<boolean[]> inbox = mailboxes.get(island);
+        ConcurrentLinkedQueue<boolean[]> inbox = mailboxes.get(island); // Replace worst individuals with migrant individuals
         int replaced = 0;
         boolean[] genes;
         while (replaced < m && (genes = inbox.poll()) != null) {
@@ -43,7 +40,7 @@ public class IslandKnapsack {
         inbox.clear(); // drop anything older than this round
     }
 
-    //Runs one island per thread and returns the best result found by any of them
+    // Run one island per thread and return the best result found
     static Result solve_islands(int islands) throws InterruptedException, ExecutionException {
         mailboxes.clear();
         for (int i = 0; i < islands; i++) mailboxes.add(new ConcurrentLinkedQueue<>());
@@ -55,13 +52,13 @@ public class IslandKnapsack {
                 int island = i;
                 futures.add(pool.submit(() -> {
                     current_island.set(island);
-                    return solve_knapsack_islands();                                  // the original GA, unchanged
+                    return solve_knapsack_islands();
                 }));
             }
 
             Result best = null;
             for (Future<Result> f : futures) {
-                Result result = f.get();                                      // wait for this island to finish
+                Result result = f.get(); // wait for this island to finish
                 if (best == null || fitness(result.bestSolution()) > fitness(best.bestSolution())) best = result;
             }
             return best;
@@ -81,7 +78,7 @@ public class IslandKnapsack {
             population = next_generation(population, fitnessValues);
             fitnessValues = all_fitness(population); // evaluated once per generation
 
-            Integer island = current_island.get();   // null when running the normal sequential GA
+            Integer island = current_island.get(); // null when running the normal sequential GA
             if (island != null && (generation + 1) % migration_interval == 0) {
                 migrate(island, population, fitnessValues);
             }
@@ -114,5 +111,4 @@ public class IslandKnapsack {
         System.out.println("Island GA (" + islands + " islands) completed in "
                 + (endTime - startTime) + " milliseconds");
     }
-
 }
