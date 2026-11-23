@@ -3,13 +3,14 @@ package GeneticAlgorithmKnapsack;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import static GeneticAlgorithmKnapsack.LoadFileAndParameters.*;
 
 public class CommonMethods {
     static int weight_sum(boolean[] individual) { // sum the weights of individuals
         int weight = 0;
         for (int i = 0; i < individual.length; i++) {
             if (individual[i]) {
-                weight += LoadFileAndParameters.weights[i];
+                weight += weights[i];
             }
         }
         return weight;
@@ -21,11 +22,11 @@ public class CommonMethods {
 
         for (int i = 0; i < individual.length; i++) {
             if (individual[i]) {
-                weight += LoadFileAndParameters.weights[i]; value += LoadFileAndParameters.values[i];
+                weight += weights[i]; value += values[i];
             }
         }
 
-        if (weight <= LoadFileAndParameters.capacity) {
+        if (weight <= capacity) {
             return value;
         } else {
             return 0;
@@ -46,12 +47,12 @@ public class CommonMethods {
         List<boolean[]> population = new ArrayList<>();
         Set<String> seen = new HashSet<>();
 
-        while (population.size() < LoadFileAndParameters.populationSize) {
-            boolean[] individual = new boolean[LoadFileAndParameters.weights.length];
-            for (int i = 0; i < individual.length; i++) individual[i] = LoadFileAndParameters.random_number.nextBoolean();
+        while (population.size() < populationSize) {
+            boolean[] individual = new boolean[weights.length];
+            for (int i = 0; i < individual.length; i++) individual[i] = random_number.nextBoolean();
 
             int weight = weight_sum(individual);
-            while (weight > LoadFileAndParameters.capacity) {
+            while (weight > capacity) {
                 List<Integer> items_in_knapsack = new ArrayList<>();
 
                 for (int i = 0; i < individual.length; i++) {
@@ -60,9 +61,9 @@ public class CommonMethods {
                     }
                 }
 
-                int index = items_in_knapsack.get(LoadFileAndParameters.random_number.nextInt(items_in_knapsack.size()));
+                int index = items_in_knapsack.get(random_number.nextInt(items_in_knapsack.size()));
                 individual[index] = false;
-                weight -= LoadFileAndParameters.weights[index];
+                weight -= weights[index];
             }
             if (seen.add(Arrays.toString(individual))) population.add(individual);
         }
@@ -70,11 +71,11 @@ public class CommonMethods {
     }
 
     static boolean[][] selection(List<boolean[]> population, int[] fitnessValues) {
-        int size = Math.min(LoadFileAndParameters.tournamentSize, population.size());
+        int size = Math.min(tournamentSize, population.size());
 
         Set<Integer> chosen_individuals = new HashSet<>();
         while (chosen_individuals.size() < size) {
-            chosen_individuals.add(LoadFileAndParameters.random_number.nextInt(population.size()));   // a Set ignores repeats
+            chosen_individuals.add(random_number.nextInt(population.size()));   // a Set ignores repeats
         }
 
         List<Integer> tournament = new ArrayList<>(chosen_individuals);
@@ -87,9 +88,9 @@ public class CommonMethods {
         boolean[] child1 = parents[0].clone();
         boolean[] child2 = parents[1].clone();
 
-        if (LoadFileAndParameters.random_number.nextDouble() < LoadFileAndParameters.crossoverRate) {
+        if (random_number.nextDouble() < crossoverRate) {
             int n = child1.length;
-            int point = 1 + LoadFileAndParameters.random_number.nextInt(n - 1);
+            int point = 1 + random_number.nextInt(n - 1);
             System.arraycopy(parents[1], point, child1, point, n - point);
             System.arraycopy(parents[0], point, child2, point, n - point);
         }
@@ -108,16 +109,16 @@ public class CommonMethods {
         int totalWeight = weight_sum(individual);
 
         for (int i = 0; i < individual.length; i++) {
-            if (LoadFileAndParameters.random_number.nextDouble() >= LoadFileAndParameters.mutationRate) {
+            if (random_number.nextDouble() >= mutationRate) {
                 continue;                                   // no mutation: leave this gene alone
             }
 
             if (individual[i]) {                            // item is in the knapsack: take it out
                 individual[i] = false;
-                totalWeight -= LoadFileAndParameters.weights[i];
-            } else if (totalWeight + LoadFileAndParameters.weights[i] <= LoadFileAndParameters.capacity) {   // item is out: add it only if it still fits
+                totalWeight -= weights[i];
+            } else if (totalWeight + weights[i] <= capacity) {   // item is out: add it only if it still fits
                 individual[i] = true;
-                totalWeight += LoadFileAndParameters.weights[i];
+                totalWeight += weights[i];
             }
         }
     }
@@ -132,7 +133,7 @@ public class CommonMethods {
     }
 
     static List<boolean[]> next_generation(List<boolean[]> population, int[] fitnessValues) {
-        List<boolean[]> next = elitism(population, fitnessValues, Math.min(LoadFileAndParameters.eliteSize, population.size()));
+        List<boolean[]> next = elitism(population, fitnessValues, Math.min(eliteSize, population.size()));
 
         while (next.size() < population.size()) {
             boolean[][] parents  = selection(population, fitnessValues);
