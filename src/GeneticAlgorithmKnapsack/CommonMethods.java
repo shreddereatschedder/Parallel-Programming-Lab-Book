@@ -1,6 +1,7 @@
 package GeneticAlgorithmKnapsack;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import static GeneticAlgorithmKnapsack.LoadFileAndParameters.*;
@@ -71,17 +72,33 @@ public class CommonMethods {
     }
 
     static boolean[][] selection(List<boolean[]> population, int[] fitnessValues) {
-        int size = Math.min(tournamentSize, population.size());
 
-        Set<Integer> chosen_individuals = new HashSet<>();
-        while (chosen_individuals.size() < size) {
-            chosen_individuals.add(random_number.nextInt(population.size()));   // a Set ignores repeats
+        int size = Math.min(tournamentSize, population.size());
+        int best = -1;
+        int secondBest = -1;
+
+        Set<Integer> chosen = new HashSet<>();
+
+        while (chosen.size() < size) {
+            int index = random_number.nextInt(population.size());
+
+            if (!chosen.add(index)) {
+                continue;
+            }
+
+            if (best == -1 || fitnessValues[index] > fitnessValues[best]) {
+                secondBest = best;
+                best = index;
+
+            } else if (secondBest == -1 || fitnessValues[index] > fitnessValues[secondBest]) {
+                secondBest = index;
+            }
         }
 
-        List<Integer> tournament = new ArrayList<>(chosen_individuals);
-        tournament.sort((a, b) -> Integer.compare(fitnessValues[b], fitnessValues[a]));
-
-        return new boolean[][] { population.get(tournament.get(0)), population.get(tournament.get(1)) };
+        return new boolean[][] {
+                population.get(best),
+                population.get(secondBest)
+        };
     }
 
     static boolean[][] crossover(boolean[][] parents) {
@@ -106,17 +123,22 @@ public class CommonMethods {
     }
 
     static void mutate_one(boolean[] individual) {
+
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+
         int totalWeight = weight_sum(individual);
 
         for (int i = 0; i < individual.length; i++) {
-            if (random_number.nextDouble() >= mutationRate) {
-                continue;                                   // no mutation: leave this gene alone
+
+            if (random.nextDouble() >= mutationRate) {
+                continue;
             }
 
-            if (individual[i]) {                            // item is in the knapsack: take it out
+            if (individual[i]) {
                 individual[i] = false;
                 totalWeight -= weights[i];
-            } else if (totalWeight + weights[i] <= capacity) {   // item is out: add it only if it still fits
+
+            } else if (totalWeight + weights[i] <= capacity) {
                 individual[i] = true;
                 totalWeight += weights[i];
             }
@@ -146,6 +168,5 @@ public class CommonMethods {
         }
         return new ArrayList<>(next.subList(0, population.size()));
     }
-
     record Result(boolean[] bestSolution, List<Integer> fitnessOverTime) {}
 }
