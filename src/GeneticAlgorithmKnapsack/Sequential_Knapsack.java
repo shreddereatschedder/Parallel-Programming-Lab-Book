@@ -36,11 +36,13 @@ public class Sequential_Knapsack {
         long startTime = System.currentTimeMillis();
 
         Result result = solve_knapsack();
+
+        long endTime = System.currentTimeMillis();
+
         boolean[] best = result.bestSolution();
         int bestValue  = fitness(best);
         int bestWeight = weight_sum(best);
 
-        long endTime = System.currentTimeMillis();
 
         System.out.println("Total Value: " + bestValue);
         System.out.println("Total Weight: " + bestWeight + " / " + capacity);
